@@ -82,7 +82,9 @@ func main() {
 							wg2.Done()
 						}
 					}()
-					if _, err := copy(makePath(*target, val2), makePath(outputPath, k, val2)); err != nil {
+					srcPath := makePath(*target, val2)
+					dstPath := makePath(outputPath, k, val2)
+					if _, err := fileCopy(srcPath, dstPath); err != nil {
 						panic(err)
 					}
 				}(val)
@@ -102,7 +104,7 @@ func makePath(paths ...string) string {
 	return strings.Join(paths, string(os.PathSeparator))
 }
 
-func copy(src, dst string) (int64, error) {
+func fileCopy(src, dst string) (int64, error) {
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return 0, err
