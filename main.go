@@ -122,7 +122,7 @@ func createPatternMapByStringLength(fileNames []string, isHead, isTail, isInclud
 }
 
 func mkdir(path string) error {
-	return os.MkdirAll(path, 0766)
+	return os.MkdirAll(path, 0777)
 }
 
 func makePath(paths ...string) string {
