@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"os"
@@ -17,6 +18,7 @@ func main() {
 	isHead := kingpin.Flag("head", "compare to head").Default("true").Bool()
 	isTail := kingpin.Flag("tail", "compare to tail").Bool()
 	isIncludeExt := kingpin.Flag("include-ext", "include extension name").Default("false").Bool()
+	isStdout := kingpin.Flag("print", "print to file copy log").Short('p').Default("false").Bool()
 	regexpPattern := kingpin.Flag("regexp", "regex pattern").Short('r').Regexp()
 	kingpin.Parse()
 
@@ -42,44 +44,39 @@ func main() {
 	}
 
 	wg := &sync.WaitGroup{}
-	for key, values := range patternMap {
+	for mathPattern, matchFileNames := range patternMap {
 		wg.Add(1)
+		outputPath := makePath(outputPath, mathPattern)
+		if err := mkdir(outputPath); err != nil {
+			panic(err)
+		}
 
-		go func(k string, v []string) {
-			defer func() {
-				switch recover().(type) {
-				default:
-					wg.Done()
-				}
-			}()
-
-			p := makePath(outputPath, k)
-			if err := mkdir(p); err != nil {
-				panic(err)
-			}
-
-			wg2 := &sync.WaitGroup{}
-			for _, val := range v {
-				wg2.Add(1)
-				go func(val2 string) {
-					defer func() {
-						switch recover().(type) {
-						default:
-							wg2.Done()
-						}
-					}()
-					srcPath := makePath(*target, val2)
-					dstPath := makePath(outputPath, k, val2)
-					if _, err := fileCopy(srcPath, dstPath); err != nil {
-						panic(err)
-					}
-				}(val)
-			}
-			wg2.Wait()
-		}(key, values)
+		for _, matchFileName := range matchFileNames {
+			wg.Add(1)
+			go doFileCopy(wg, target, matchFileName, outputPath, isStdout)
+		}
+		wg.Done()
 	}
-
 	wg.Wait()
+}
+
+func doFileCopy(wg *sync.WaitGroup, target *string, matchFileName, outputPath string, isStdout *bool) {
+	defer func() {
+		switch recover().(type) {
+		default:
+			wg.Done()
+		}
+	}()
+
+	srcPath := makePath(*target, matchFileName)
+	dstPath := makePath(outputPath, matchFileName)
+
+	if *isStdout {
+		fmt.Println(filepath.Clean(srcPath), " -> ", filepath.Clean(dstPath))
+	}
+	if _, err := fileCopy(srcPath, dstPath); err != nil {
+		panic(err)
+	}
 }
 
 func createPatternMapByRegexp(fileNames []string, regexpPattern **regexp.Regexp) map[string][]string {
