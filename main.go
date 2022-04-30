@@ -5,49 +5,35 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
 func main() {
-	target := kingpin.Flag("target", "target directory path").Short('t').Default(".").String()
+	target := kingpin.Flag("target", "target directory path").Short('t').Default(".").ExistingDir()
 	length := kingpin.Flag("length", "compare to filename length").Short('l').Default("0").Uint()
 	isHead := kingpin.Flag("head", "compare to head").Default("true").Bool()
 	isTail := kingpin.Flag("tail", "compare to tail").Bool()
 	isIncludeExt := kingpin.Flag("include-ext", "include extension name").Default("false").Bool()
+	regexpPattern := kingpin.Flag("regexp", "regex pattern").Short('r').Regexp()
 	kingpin.Parse()
 
-	if *length <= 0 {
+	if *length <= 0 && *regexpPattern == nil {
 		return
 	}
 
-	fnames, err := getFileNames(*target)
+	fileNames, err := getFileNames(*target)
 	if err != nil {
 		panic(err)
 	}
 
 	patternMap := make(map[string][]string)
-	for _, fname := range fnames {
-		var key string
-		if *isHead {
-			key = fname[:*length]
-		}
-		if *isTail {
-			tailStartIndex := len(fname) - int(*length)
-			if *isIncludeExt {
-				key = fname[tailStartIndex:]
-			} else {
-				ext := filepath.Ext(fname)
-				if !strings.EqualFold(ext, "") {
-					fn := strings.Split(fname, ext)[0]
-					key = fn[tailStartIndex-len(ext):]
-				} else {
-					key = fname[tailStartIndex:]
-				}
-			}
-		}
-		patternMap[key] = append(patternMap[key], fname)
+	if *regexpPattern != nil {
+		patternMap = createPatternMapByRegexp(fileNames, regexpPattern)
+	} else {
+		patternMap = createPatternMapByStringLength(fileNames, isHead, isTail, isIncludeExt, length)
 	}
 
 	outputPath, err := os.MkdirTemp(makePath("."), time.Now().Format("20060102150405_*"))
@@ -94,6 +80,48 @@ func main() {
 	}
 
 	wg.Wait()
+}
+
+func createPatternMapByRegexp(fileNames []string, regexpPattern **regexp.Regexp) map[string][]string {
+	patternMap := make(map[string][]string)
+	for _, fileName := range fileNames {
+		var key string
+		if *regexpPattern != nil {
+			if (*regexpPattern).Match([]byte(fileName)) {
+				key = (*regexpPattern).FindString(fileName)
+			} else {
+				continue
+			}
+		}
+		patternMap[key] = append(patternMap[key], fileName)
+	}
+	return patternMap
+}
+
+func createPatternMapByStringLength(fileNames []string, isHead, isTail, isIncludeExt *bool, length *uint) map[string][]string {
+	patternMap := make(map[string][]string)
+	for _, fileName := range fileNames {
+		var key string
+		if *isHead {
+			key = fileName[:*length]
+		}
+		if *isTail {
+			tailStartIndex := len(fileName) - int(*length)
+			if *isIncludeExt {
+				key = fileName[tailStartIndex:]
+			} else {
+				ext := filepath.Ext(fileName)
+				if !strings.EqualFold(ext, "") {
+					fn := strings.Split(fileName, ext)[0]
+					key = fn[tailStartIndex-len(ext):]
+				} else {
+					key = fileName[tailStartIndex:]
+				}
+			}
+		}
+		patternMap[key] = append(patternMap[key], fileName)
+	}
+	return patternMap
 }
 
 func mkdir(path string) error {
