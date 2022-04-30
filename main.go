@@ -13,13 +13,13 @@ import (
 )
 
 func main() {
-	target := kingpin.Flag("target", "target directory path").Short('t').Default(".").ExistingDir()
-	length := kingpin.Flag("length", "compare to filename length").Short('l').Default("0").Uint()
-	isHead := kingpin.Flag("head", "compare to head").Default("true").Bool()
-	isTail := kingpin.Flag("tail", "compare to tail").Bool()
-	isIncludeExt := kingpin.Flag("include-ext", "include extension name").Default("false").Bool()
-	isStdout := kingpin.Flag("print", "print to file copy log").Short('p').Default("false").Bool()
-	regexpPattern := kingpin.Flag("regexp", "regex pattern").Short('r').Regexp()
+	target := kingpin.Flag(ArgTargetLongFlag, ArgTargetHelpMsg).Short(ArgTargetShortFlag).Default(".").ExistingDir()
+	length := kingpin.Flag(ArgLengthLongFlag, ArgLengthHelpMsg).Short(ArgLengthShortFlag).Default("0").Uint()
+	isHead := kingpin.Flag(ArgIsHeadLongFlag, ArgIsHeadHelpMsg).Default("true").Bool()
+	isTail := kingpin.Flag(ArgIsTailLongFlag, ArgIsTailHelpMsg).Bool()
+	isIncludeExt := kingpin.Flag(ArgIsIncludeExtensionLongFlag, ArgIsIncludeExtensionHelpMsg).Default("false").Bool()
+	isStdout := kingpin.Flag(ArgIsStdoutLongFlag, ArgIsStdoutHelpMsg).Short(ArgIsStdoutShortFlag).Default("false").Bool()
+	regexpPattern := kingpin.Flag(ArgRegexpLongFlag, ArgRegexPatternHelpMsg).Short(ArgRegexpShortFlag).Regexp()
 	kingpin.Parse()
 
 	if *length <= 0 && *regexpPattern == nil {
