@@ -8,16 +8,21 @@ import (
 	"time"
 )
 
-func main() {
-	target := kingpin.Flag(ArgTargetLongFlag, ArgTargetHelpMsg).Short(ArgTargetShortFlag).Default(".").ExistingDir()
-	length := kingpin.Flag(ArgLengthLongFlag, ArgLengthHelpMsg).Short(ArgLengthShortFlag).Default("0").Uint()
-	isHead := kingpin.Flag(ArgIsHeadLongFlag, ArgIsHeadHelpMsg).Default("true").Bool()
-	isTail := kingpin.Flag(ArgIsTailLongFlag, ArgIsTailHelpMsg).Bool()
-	isIncludeExt := kingpin.Flag(ArgIsIncludeExtensionLongFlag, ArgIsIncludeExtensionHelpMsg).Default("false").Bool()
-	isStdout := kingpin.Flag(ArgIsStdoutLongFlag, ArgIsStdoutHelpMsg).Short(ArgIsStdoutShortFlag).Default("false").Bool()
-	regexpPattern := kingpin.Flag(ArgRegexpLongFlag, ArgRegexPatternHelpMsg).Short(ArgRegexpShortFlag).Regexp()
-	kingpin.Parse()
+var (
+	target        = kingpin.Flag(ArgTargetLongFlag, ArgTargetHelpMsg).Short(ArgTargetShortFlag).Default(".").ExistingDir()
+	length        = kingpin.Flag(ArgLengthLongFlag, ArgLengthHelpMsg).Short(ArgLengthShortFlag).Default("0").Uint()
+	isHead        = kingpin.Flag(ArgIsHeadLongFlag, ArgIsHeadHelpMsg).Default("true").Bool()
+	isTail        = kingpin.Flag(ArgIsTailLongFlag, ArgIsTailHelpMsg).Bool()
+	isIncludeExt  = kingpin.Flag(ArgIsIncludeExtensionLongFlag, ArgIsIncludeExtensionHelpMsg).Default("false").Bool()
+	isStdout      = kingpin.Flag(ArgIsStdoutLongFlag, ArgIsStdoutHelpMsg).Short(ArgIsStdoutShortFlag).Default("false").Bool()
+	regexpPattern = kingpin.Flag(ArgRegexpLongFlag, ArgRegexPatternHelpMsg).Short(ArgRegexpShortFlag).Regexp()
+)
 
+func init() {
+	kingpin.Parse()
+}
+
+func main() {
 	if *length <= 0 && *regexpPattern == nil {
 		return
 	}
