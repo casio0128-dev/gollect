@@ -46,7 +46,6 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 	for mathPattern, matchFileNames := range patternMap {
-		wg.Add(1)
 		outputPath := utils.MakePath(outputPath, mathPattern)
 		if err := utils.Mkdir(outputPath); err != nil {
 			panic(err)
@@ -56,7 +55,6 @@ func main() {
 			wg.Add(1)
 			go utils.DoFileCopy(wg, target, matchFileName, outputPath, isStdout)
 		}
-		wg.Done()
 	}
 	wg.Wait()
 }
