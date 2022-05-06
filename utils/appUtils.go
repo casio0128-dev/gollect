@@ -29,21 +29,29 @@ func CreatePatternMapByStringLength(fileNames []string, isHead, isTail, isInclud
 	patternMap := make(map[string][]string)
 	for _, fileName := range fileNames {
 		var key string
-		if *isHead {
-			key = fileName[:*length]
-		}
 		if *isTail {
 			tailStartIndex := len(fileName) - int(*length)
+			if tailStartIndex < 0 || tailStartIndex > len(fileName) {
+				tailStartIndex = 0
+			}
 			if *isIncludeExt {
 				key = fileName[tailStartIndex:]
 			} else {
 				ext := filepath.Ext(fileName)
 				if !strings.EqualFold(ext, "") {
 					fn := strings.Split(fileName, ext)[0]
-					key = fn[tailStartIndex-len(ext):]
+					tailStartIndex -= len(ext)
+					key = fn[tailStartIndex:]
 				} else {
 					key = fileName[tailStartIndex:]
 				}
+			}
+		} else if *isHead {
+			nameLength := len(fileName)
+			if int(*length) > nameLength {
+				key = fileName[:nameLength]
+			} else {
+				key = fileName[:*length]
 			}
 		}
 		patternMap[key] = append(patternMap[key], fileName)
