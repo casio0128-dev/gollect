@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 )
 
 func Mkdir(path string) error {
@@ -21,12 +22,24 @@ func getDirNames(path string, skipCondition func(entry os.DirEntry) bool) ([]str
 	}
 
 	var result []string
+	wg := &sync.WaitGroup{}
 	for _, dir := range dirs {
-		if skipCondition(dir) {
-			continue
-		}
-		result = append(result, dir.Name())
+		wg.Add(1)
+		go func(file os.DirEntry) {
+			defer func() {
+				switch recover().(type) {
+				default:
+					wg.Done()
+				}
+			}()
+
+			if skipCondition(file) {
+				return
+			}
+			result = append(result, file.Name())
+		}(dir)
 	}
+	wg.Wait()
 	return result, nil
 }
 
