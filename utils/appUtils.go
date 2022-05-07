@@ -41,6 +41,9 @@ func CreatePatternMapByStringLength(fileNames []string, isHead, isTail, isInclud
 				if !strings.EqualFold(ext, "") {
 					fn := strings.Split(fileName, ext)[0]
 					tailStartIndex -= len(ext)
+					if tailStartIndex < 0 {
+						tailStartIndex = 0
+					}
 					key = fn[tailStartIndex:]
 				} else {
 					key = fileName[tailStartIndex:]
