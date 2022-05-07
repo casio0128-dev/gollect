@@ -25,4 +25,8 @@ const (
 	ArgIsStdoutLongFlag  = "print"
 	ArgIsStdoutShortFlag = 'p'
 	ArgIsStdoutHelpMsg   = "Displays the source and destination of the copy on standard output."
+
+	ArgIsShowFileTreeLongFlag  = "show-tree"
+	ArgIsShowFileTreeShortFlag = 's'
+	ArgIsShowFileTreeHelpMsg   = "Display the files to be copied in a tree view."
 )

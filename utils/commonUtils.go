@@ -1,11 +1,65 @@
 package utils
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
+
+func PrintTree(target string, tree map[string][]string, out io.Writer) {
+	var targetIndent int
+	currentTarget := strings.Split(filepath.Clean(target), string(os.PathSeparator))
+	for i, t := range currentTarget {
+		if i == 0 {
+			fmt.Fprintf(out, "%s\n", t)
+		} else {
+			fmt.Fprintf(out, "%s└%s\n", createBlank(uint(targetIndent), " "), t)
+		}
+		targetIndent += i + 1
+	}
+
+	var currentIndent = uint(targetIndent + 1)
+	var dirCount = len(tree)
+	var dirIndex int
+	for dirName, fileNames := range tree {
+		dirIndex++
+		var lineStr string
+		if dirIndex == dirCount {
+			lineStr += fmt.Sprintf("%s└%s\n", createBlank(currentIndent, " "), dirName)
+		} else {
+			lineStr += fmt.Sprintf("%s├%s\n", createBlank(currentIndent, " "), dirName)
+		}
+
+		for fileIndex, fileName := range fileNames {
+			if dirIndex != dirCount {
+				lineStr += fmt.Sprintf("%s│", createBlank(currentIndent, " "))
+			}
+
+			if fileIndex < len(fileNames)-1 {
+				lineStr += fmt.Sprintf("%s├%s\n", createBlank(currentIndent+1, " "), fileName)
+			} else {
+				lineStr += fmt.Sprintf("%s└%s", createBlank(currentIndent+1, " "), fileName)
+			}
+		}
+		if _, err := fmt.Fprintln(out, lineStr); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func createBlank(count uint, blankStr string) string {
+	if count <= 0 {
+		return ""
+	}
+	var result string
+	for i := 0; i < int(count); i++ {
+		result += blankStr
+	}
+	return result
+}
 
 func Mkdir(path string) error {
 	return os.MkdirAll(path, 0777)
