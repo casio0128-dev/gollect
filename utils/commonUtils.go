@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
+	"time"
 )
 
 func PrintTree(target string, tree map[string][]string, out io.Writer) {
@@ -18,7 +20,7 @@ func PrintTree(target string, tree map[string][]string, out io.Writer) {
 		} else {
 			fmt.Fprintf(out, "%s└%s\n", createBlank(uint(targetIndent), " "), t)
 		}
-		targetIndent += i + 1
+		targetIndent = i
 	}
 
 	var currentIndent = uint(targetIndent + 1)
@@ -29,6 +31,7 @@ func PrintTree(target string, tree map[string][]string, out io.Writer) {
 		var lineStr string
 		if dirIndex == dirCount {
 			lineStr += fmt.Sprintf("%s└%s\n", createBlank(currentIndent, " "), dirName)
+			currentIndent += 2
 		} else {
 			lineStr += fmt.Sprintf("%s├%s\n", createBlank(currentIndent, " "), dirName)
 		}
@@ -39,9 +42,9 @@ func PrintTree(target string, tree map[string][]string, out io.Writer) {
 			}
 
 			if fileIndex < len(fileNames)-1 {
-				lineStr += fmt.Sprintf("%s├%s\n", createBlank(currentIndent+1, " "), fileName)
+				lineStr += fmt.Sprintf("%s├%s\n", createBlank(currentIndent, " "), fileName)
 			} else {
-				lineStr += fmt.Sprintf("%s└%s", createBlank(currentIndent+1, " "), fileName)
+				lineStr += fmt.Sprintf("%s└%s", createBlank(currentIndent, " "), fileName)
 			}
 		}
 		if _, err := fmt.Fprintln(out, lineStr); err != nil {
@@ -67,6 +70,26 @@ func Mkdir(path string) error {
 
 func MakePath(paths ...string) string {
 	return strings.Join(paths, string(os.PathSeparator))
+}
+
+func AppendPrefixTimeStamp(str string) string {
+	return time.Now().Format("20060102150405") + str
+}
+
+func AppendPrefixTimeStampShort(str string) string {
+	return time.Now().Format("20060102") + str
+}
+
+func GetEnvHOME() string {
+	switch runtime.GOOS {
+	case "windows":
+		return os.Getenv("USERPROFILE")
+	case "linux":
+		return os.Getenv("HOME")
+	case "darwin":
+		return os.Getenv("HOME")
+	}
+	return ""
 }
 
 func getDirNames(path string, skipCondition func(entry os.DirEntry) bool) ([]string, error) {
@@ -95,6 +118,14 @@ func getDirNames(path string, skipCondition func(entry os.DirEntry) bool) ([]str
 	}
 	wg.Wait()
 	return result, nil
+}
+
+func OpenFile(path string) (*os.File, error) {
+	if f, err := os.OpenFile(path, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0666); err != nil {
+		return nil, err
+	} else {
+		return f, nil
+	}
 }
 
 func fileCopy(src, dst string) (int64, error) {

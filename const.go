@@ -29,4 +29,11 @@ const (
 	ArgIsShowFileTreeLongFlag  = "show-tree"
 	ArgIsShowFileTreeShortFlag = 's'
 	ArgIsShowFileTreeHelpMsg   = "Display the files to be copied in a tree view."
+
+	ArgIsInteractiveLongFlag  = "interactive"
+	ArgIsInteractiveShortFlag = 'i'
+	ArgIsInteractiveHelpMsg   = "Confirm whether to create it."
+
+	ArgIsPrintLog        = "print-log"
+	ArgIsPrintLogHelpMsg = "Prints the contents of the log."
 )
