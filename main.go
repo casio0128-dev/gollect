@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"gollect/log"
 	"gollect/utils"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"sync"
-	"time"
 )
 
 var (
@@ -15,8 +18,9 @@ var (
 	isTail           = kingpin.Flag(ArgIsTailLongFlag, ArgIsTailHelpMsg).Bool()
 	isIncludeExt     = kingpin.Flag(ArgIsIncludeExtensionLongFlag, ArgIsIncludeExtensionHelpMsg).Default("false").Bool()
 	isStdout         = kingpin.Flag(ArgIsStdoutLongFlag, ArgIsStdoutHelpMsg).Short(ArgIsStdoutShortFlag).Default("false").Bool()
-	isShowCopiedTree = kingpin.Flag(ArgIsShowFileTreeLongFlag, ArgIsShowFileTreeHelpMsg).Short(ArgIsShowFileTreeShortFlag).Default("true").Bool()
+	isShowCopiedTree = kingpin.Flag(ArgIsShowFileTreeLongFlag, ArgIsShowFileTreeHelpMsg).Short(ArgIsShowFileTreeShortFlag).Default("false").Bool()
 	regexpPattern    = kingpin.Flag(ArgRegexpLongFlag, ArgRegexPatternHelpMsg).Short(ArgRegexpShortFlag).Regexp()
+	isPrintLog       = kingpin.Flag(ArgIsPrintLog, ArgIsPrintLogHelpMsg).Default("false").Bool()
 )
 
 func init() {
@@ -24,6 +28,26 @@ func init() {
 }
 
 func main() {
+	logChan := make(chan string)
+	logger := log.NewLogger("", logChan, &sync.WaitGroup{})
+	logger.Add(1)
+	go logger.Do()
+
+	if *isPrintLog {
+		logger.Close()
+
+		f, err := logger.OpenLogFile()
+		if err != nil {
+			panic(err)
+		}
+
+		logReader := bufio.NewScanner(f)
+		for logReader.Scan() {
+			fmt.Println(logReader.Text())
+		}
+		fmt.Println(logger.GetLogPath())
+	}
+
 	if *length <= 0 && *regexpPattern == nil {
 		return
 	}
@@ -40,7 +64,7 @@ func main() {
 		patternMap = utils.CreatePatternMapByStringLength(fileNames, isHead, isTail, isIncludeExt, length)
 	}
 
-	outputPath, err := os.MkdirTemp(utils.MakePath("."), time.Now().Format("20060102150405_*"))
+	outputPath, err := os.MkdirTemp(utils.MakePath("."), utils.AppendPrefixTimeStamp("_*"))
 	if err != nil {
 		panic(err)
 	}
@@ -58,8 +82,13 @@ func main() {
 		}
 	}
 	wg.Wait()
+	buf := &bytes.Buffer{}
+	utils.PrintTree(outputPath, patternMap, buf)
+	logger.Send(buf.String())
+	logger.Close()
 
 	if *isShowCopiedTree {
-		utils.PrintTree(outputPath, patternMap, os.Stdout)
+		fmt.Println(buf.String())
 	}
+	logger.Wait()
 }
